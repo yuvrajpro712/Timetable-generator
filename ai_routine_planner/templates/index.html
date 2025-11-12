@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🧠 AI Smart Timetable Generator</title>
+  <style>
+    body {
+      font-family: Poppins, sans-serif;
+      background: #0e0e0e;
+      color: #fff;
+      text-align: center;
+      margin-top: 60px;
+    }
+    textarea {
+      width: 60%;
+      height: 120px;
+      border-radius: 10px;
+      border: none;
+      padding: 10px;
+      font-size: 16px;
+      outline: none;
+    }
+    button {
+      background: #00aaff;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 25px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 10px;
+    }
+    button:hover {
+      background: #0088cc;
+    }
+    #result {
+      margin-top: 30px;
+      text-align: left;
+      width: 60%;
+      margin-inline: auto;
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 12px;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    li {
+      margin: 6px 0;
+    }
+    .feedback-section {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .feedback-btn {
+      font-size: 22px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      margin: 10px;
+      transition: 0.2s;
+    }
+    .feedback-btn:hover {
+      transform: scale(1.2);
+    }
+  </style>
+</head>
+<body>
+  <h1>🕒 AI Smart Timetable Generator</h1>
+  <p>Enter at least 4 activities for your day (e.g. <i>college, gym, study, sleep</i>)</p>
+  <textarea id="tasks" placeholder="Type your activities..."></textarea><br />
+  <button id="generate">Generate</button>
+
+  <div id="result"></div>
+
+  <script>
+    async function sendFeedback(feedback) {
+      const activities = document.getElementById("tasks").value.split(",").map(t => t.trim());
+      const schedule = Array.from(document.querySelectorAll("#result li")).map(li => li.textContent);
+
+      await fetch("/feedback", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ activities, schedule, feedback })
+      });
+      alert("✅ Feedback saved — thank you!");
+    }
+
+    document.getElementById("generate").addEventListener("click", async () => {
+      const raw = document.getElementById("tasks").value.trim();
+      const tasks = raw.split(",").map(t => t.trim()).filter(Boolean);
+
+      const res = await fetch("/generate", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ tasks })
+      });
+
+      const data = await res.json();
+      const result = document.getElementById("result");
+
+      if (data.error) {
+        result.innerHTML = `<p style="color:orange;font-weight:bold;">⚠️ ${data.error}</p>`;
+      } else {
+        result.innerHTML =
+          "<h3>📅 Your Personalized Day Plan:</h3><ul>" +
+          data.schedule.map(i => `<li>${i}</li>`).join("") +
+          "</ul>" +
+          `<div class="feedback-section">
+            <p>Was this helpful?</p>
+            <button class="feedback-btn" onclick="sendFeedback('yes')">👍 Yes</button>
+            <button class="feedback-btn" onclick="sendFeedback('no')">👎 No</button>
+          </div>`;
+      }
+    });
+  </script>
+</body>
+</html>
